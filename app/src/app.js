@@ -21,15 +21,22 @@ app.use('/api/todos', todoRoutes);
 app.get('/health', (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
   res.status(isConnected ? 200 : 503).json({
-    status: isConnected ? 'ok' : 'error',
-    mongodb: isConnected ? 'connected' : 'disconnected'
+    status: isConnected ? 'healthy' : 'unhealthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'Todo API is running' });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({ error: 'Something went wrong!' });
 });
 
-module.exports = app;
+// Export the app for testing
+module.exports = { app, mongoose };

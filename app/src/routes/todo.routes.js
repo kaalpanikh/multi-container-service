@@ -8,22 +8,27 @@ router.get('/', async (req, res) => {
     const todos = await Todo.find();
     res.json(todos);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error getting todos:', error);
+    res.status(500).json({ error: 'Error getting todos' });
   }
 });
 
 // POST new todo
 router.post('/', async (req, res) => {
-  const todo = new Todo({
-    title: req.body.title,
-    description: req.body.description
-  });
-
   try {
-    const newTodo = await todo.save();
-    res.status(201).json(newTodo);
+    const { title, description } = req.body;
+
+    // Validate required fields
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Title and description are required' });
+    }
+
+    const todo = new Todo({ title, description });
+    const savedTodo = await todo.save();
+    res.status(201).json(savedTodo);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error creating todo:', error);
+    res.status(500).json({ error: 'Error creating todo' });
   }
 });
 
@@ -31,47 +36,45 @@ router.post('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const todo = await Todo.findById(req.params.id);
-    if (todo) {
-      res.json(todo);
-    } else {
-      res.status(404).json({ message: 'Todo not found' });
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
     }
+    res.json(todo);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error getting todo:', error);
+    res.status(500).json({ error: 'Error getting todo' });
   }
 });
 
 // UPDATE todo
 router.put('/:id', async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id);
-    if (todo) {
-      todo.title = req.body.title || todo.title;
-      todo.description = req.body.description || todo.description;
-      todo.completed = req.body.completed !== undefined ? req.body.completed : todo.completed;
-      
-      const updatedTodo = await todo.save();
-      res.json(updatedTodo);
-    } else {
-      res.status(404).json({ message: 'Todo not found' });
+    const todo = await Todo.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
     }
+    res.json(todo);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error updating todo:', error);
+    res.status(500).json({ error: 'Error updating todo' });
   }
 });
 
 // DELETE todo
 router.delete('/:id', async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id);
-    if (todo) {
-      await todo.deleteOne();
-      res.json({ message: 'Todo deleted' });
-    } else {
-      res.status(404).json({ message: 'Todo not found' });
+    const todo = await Todo.findByIdAndDelete(req.params.id);
+    if (!todo) {
+      return res.status(404).json({ error: 'Todo not found' });
     }
+    res.json({ message: 'Todo deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error deleting todo:', error);
+    res.status(500).json({ error: 'Error deleting todo' });
   }
 });
 
