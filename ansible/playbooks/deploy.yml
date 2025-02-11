@@ -1,56 +1,53 @@
 ---
-- name: Deploy Multi-Container Application
-  hosts: target
+- name: Deploy Application
+  hosts: target_node
   become: yes
-  vars:
-    project_dir: /opt/multi-container-service
-    docker_registry: ""  # Add if using private registry
-
   tasks:
-    - name: Ensure project directory exists
+    - name: Create application directory
       file:
-        path: "{{ project_dir }}"
+        path: /opt/multi-container-service
         state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
         mode: '0755'
 
-    - name: Copy project files
+    - name: Copy application files
       synchronize:
-        src: /home/{{ ansible_user }}/multi-container-service/
-        dest: "{{ project_dir }}"
+        src: ~/multi-container-service/
+        dest: /opt/multi-container-service/
         delete: yes
         recursive: yes
-      delegate_to: control
+      delegate_to: control_node
 
-    - name: Copy environment file
-      template:
-        src: /home/{{ ansible_user }}/multi-container-service/.env
-        dest: "{{ project_dir }}/.env"
-        mode: '0600'
-      delegate_to: control
+    - name: Set proper permissions
+      file:
+        path: /opt/multi-container-service
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: yes
 
-    - name: Build and start containers
+    - name: Pull latest Docker images
       docker_compose:
-        project_src: "{{ project_dir }}"
-        state: present
+        project_src: /opt/multi-container-service
         pull: yes
-        remove_orphans: yes
-        build: yes
+        state: present
 
-    - name: Prune unused Docker images
-      docker_prune:
-        images: yes
-        images_filters:
-          dangling: true
+    - name: Start application
+      docker_compose:
+        project_src: /opt/multi-container-service
+        state: present
+        restarted: yes
 
-    - name: Check services health
+    - name: Wait for application to be ready
       uri:
-        url: "http://localhost/health"
+        url: http://localhost/health
         return_content: yes
       register: health_check
       until: health_check.status == 200
       retries: 12
       delay: 5
 
-    - name: Show deployment status
+    - name: Verify deployment
       debug:
-        msg: "Application deployed successfully. Health check response: {{ health_check.content }}"
+        msg: "Application deployed successfully and health check passed"
+      when: health_check.status == 200
