@@ -1,0 +1,31 @@
+---
+- name: Cleanup Target Node
+  hosts: target_node
+  become: yes
+  tasks:
+    - name: Stop and remove containers
+      docker_compose:
+        project_src: /opt/multi-container-service
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove application directory
+      file:
+        path: /opt/multi-container-service
+        state: absent
+
+    - name: Remove Docker containers
+      shell: docker rm -f $(docker ps -aq) || true
+      ignore_errors: yes
+
+    - name: Remove Docker volumes
+      shell: docker volume rm $(docker volume ls -q) || true
+      ignore_errors: yes
+
+    - name: Remove Docker networks
+      shell: docker network rm $(docker network ls -q) || true
+      ignore_errors: yes
+
+    - name: Prune Docker system
+      shell: docker system prune -af
+      ignore_errors: yes
