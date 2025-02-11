@@ -21,12 +21,14 @@ jobs:
         run: |
           cd app
           npm install
+          ls -la
           
       - name: Run tests
         run: |
           cd app
+          ls -la test/
           npm test
-
+          
   build:
     needs: test
     runs-on: ubuntu-latest
