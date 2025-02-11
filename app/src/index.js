@@ -22,7 +22,11 @@ app.use('/api/todos', require('./routes/todos'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 // Error handling middleware
@@ -30,6 +34,8 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
+
+let server;
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI, {
@@ -39,7 +45,7 @@ mongoose.connect(MONGODB_URI, {
 .then(() => {
   console.log('Connected to MongoDB');
   // Start server only after successful database connection
-  app.listen(PORT, '0.0.0.0', () => {
+  server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
   });
 })
@@ -47,3 +53,28 @@ mongoose.connect(MONGODB_URI, {
   console.error('Error connecting to MongoDB:', error);
   process.exit(1);
 });
+
+// Graceful shutdown
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+async function gracefulShutdown() {
+  console.log('Received shutdown signal');
+  
+  // Close HTTP server
+  if (server) {
+    console.log('Closing HTTP server');
+    await new Promise(resolve => server.close(resolve));
+    console.log('HTTP server closed');
+  }
+
+  // Close MongoDB connection
+  if (mongoose.connection.readyState === 1) {
+    console.log('Closing MongoDB connection');
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed');
+  }
+
+  console.log('Graceful shutdown completed');
+  process.exit(0);
+}

@@ -8,6 +8,12 @@
     "dev": "nodemon src/index.js",
     "test": "jest"
   },
+  "author": "Nikhil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaalpanikh/multi-container-service.git"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
@@ -19,5 +25,8 @@
   "devDependencies": {
     "jest": "^29.5.0",
     "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
