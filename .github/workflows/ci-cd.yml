@@ -9,11 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:latest
-        ports:
-          - 27017:27017
     steps:
       - uses: actions/checkout@v3
       
@@ -21,21 +16,16 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: app/package.json
           
       - name: Install dependencies
         run: |
           cd app
-          npm ci
+          npm install
           
       - name: Run tests
         run: |
           cd app
           npm test
-        env:
-          MONGODB_URI: mongodb://localhost:27017/todos_test
-          NODE_ENV: test
 
   build:
     needs: test
@@ -58,11 +48,7 @@ jobs:
         with:
           context: ./app
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/todo-api:latest
-            ${{ secrets.DOCKER_USERNAME }}/todo-api:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/todo-api:latest
-          cache-to: type=inline
+          tags: ${{ secrets.DOCKER_USERNAME }}/todo-api:${{ github.sha }}
           
   deploy:
     needs: build
@@ -92,22 +78,11 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           ssh ubuntu@$TARGET_HOST "cd /opt/multi-container-service && \
-          git pull && \
-          sudo docker compose pull && \
-          sudo docker compose up -d --force-recreate api && \
-          sudo docker system prune -af --volumes"
+          sudo docker-compose pull && \
+          sudo docker-compose up -d && \
+          sudo docker system prune -f"
           
       - name: Health Check
-        env:
-          TARGET_HOST: ${{ secrets.TARGET_HOST }}
         run: |
-          for i in {1..12}; do
-            if curl -sf http://$TARGET_HOST/health; then
-              echo "Application is healthy"
-              exit 0
-            fi
-            echo "Waiting for application to be healthy..."
-            sleep 10
-          done
-          echo "Health check failed after 2 minutes"
-          exit 1
+          sleep 30
+          curl -f http://${{ secrets.TARGET_HOST }}/health || exit 1
