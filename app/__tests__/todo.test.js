@@ -1,16 +1,6 @@
 const request = require('supertest');
-const mongoose = require('mongoose');
 const app = require('../src/app');
 const Todo = require('../src/models/todo.model');
-
-beforeAll(async () => {
-  const url = process.env.MONGODB_URI || 'mongodb://localhost:27017/todos_test';
-  await mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
-});
-
-afterAll(async () => {
-  await mongoose.connection.close();
-});
 
 beforeEach(async () => {
   await Todo.deleteMany();
