@@ -195,4 +195,3 @@ MIT
 ✅ API Endpoints: Working
 ✅ MongoDB: Connected
 ✅ Nginx: Configured
-⚠️ HTTPS: Pending
