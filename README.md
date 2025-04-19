@@ -3,7 +3,7 @@
 A production-ready multi-container application deployed on AWS EC2 with automated CI/CD pipeline. The application consists of a Node.js Todo API, MongoDB database, and Nginx reverse proxy, all orchestrated using Docker Compose.
 
 ## Project Page
-This project is part of the [DevOps Project Based Learning](https://roadmap.sh/projects/multi-container-service) curriculum.
+This project is part of the [DevOps Project Based Learning](https://roadmap.sh/projects/multi-container-service) curriculum
 
 ## Live Demo
 - **URL**: [http://mca.nikhilmishra.live](http://mca.nikhilmishra.live)
